@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Script Verification</title>
+    <title>ShadowHub</title>
     <script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit" async defer></script>
     <style>
         body {
@@ -39,6 +39,7 @@
             border-radius: 5px;
             display: flex;
             justify-content: center;
+            min-height: 78px; /* Minimum height for reCAPTCHA widget */
         }
         
         .result {
@@ -73,23 +74,38 @@
             margin: 20px 0;
         }
         
-        .g-recaptcha {
-            display: inline-block;
+        button {
+            background-color: #6600cc;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            background-color: #7f00ff;
+        }
+        
+        button:disabled {
+            background-color: #330066;
+            cursor: not-allowed;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Advanced Script Verification</h1>
+        <h1>Get ShadowHub</h1>
         <p>Please complete the CAPTCHA to verify you're human:</p>
         
         <div class="captcha-container">
-            <div id="2captcha-container"></div>
+            <div id="captcha-widget"></div>
         </div>
         
-        <div id="verifyButton" style="display: none;">
-            <button onclick="verifyCaptcha()">Verify CAPTCHA</button>
-        </div>
+        <button id="verifyButton" onclick="verifyCaptcha()" disabled>Verify CAPTCHA</button>
         
         <div id="loading" class="loading" style="display: none;">
             Verifying CAPTCHA, please wait...
@@ -99,46 +115,46 @@
     </div>
     
     <script>
-        // 2Captcha API configuration
-        const API_KEY = '800d917bc91dd5a84e826860f8ffac80'; // Replace with your actual 2Captcha API key
+        // reCAPTCHA configuration
         let captchaWidgetId;
-        let captchaResponse;
+        let captchaResponse = null;
         
         // Callback when reCAPTCHA is loaded
-        const onloadCallback = function() {
-            captchaWidgetId = grecaptcha.render('2captcha-container', {
-                'sitekey': '6Lc89o8rAAAAAG3e2m-hnoVC3h-6QIGlo9L_vlz0', // 2Captcha test key
+        function onloadCallback() {
+            captchaWidgetId = grecaptcha.render('captcha-widget', {
+                'sitekey': '6Le-wvkSAAAAAPBMRTvw0Q4Muexq9bi0DJwx_mJ-', // Test key - replace with your own
                 'callback': onCaptchaSuccess,
                 'expired-callback': onCaptchaExpired,
                 'error-callback': onCaptchaError,
                 'theme': 'dark'
             });
-            
-            document.getElementById('verifyButton').style.display = 'block';
-        };
+        }
         
         // CAPTCHA solved successfully
-        const onCaptchaSuccess = function(response) {
+        function onCaptchaSuccess(response) {
             captchaResponse = response;
-        };
+            document.getElementById('verifyButton').disabled = false;
+        }
         
         // CAPTCHA expired
-        const onCaptchaExpired = function() {
+        function onCaptchaExpired() {
             captchaResponse = null;
+            document.getElementById('verifyButton').disabled = true;
             document.getElementById('result').style.display = 'none';
-        };
+        }
         
         // CAPTCHA error
-        const onCaptchaError = function() {
+        function onCaptchaError() {
             captchaResponse = null;
+            document.getElementById('verifyButton').disabled = true;
             document.getElementById('result').style.display = 'block';
             document.getElementById('result').className = 'result error';
             document.getElementById('result').textContent = 'CAPTCHA error occurred. Please try again.';
             grecaptcha.reset(captchaWidgetId);
-        };
+        }
         
-        // Verify CAPTCHA with 2Captcha API
-        const verifyCaptcha = function() {
+        // Verify CAPTCHA
+        function verifyCaptcha() {
             if (!captchaResponse) {
                 document.getElementById('result').style.display = 'block';
                 document.getElementById('result').className = 'result error';
@@ -146,23 +162,19 @@
                 return;
             }
             
-            document.getElementById('verifyButton').style.display = 'none';
+            document.getElementById('verifyButton').disabled = true;
             document.getElementById('loading').style.display = 'block';
             document.getElementById('result').style.display = 'none';
             
-            // In a real implementation, you would send this to your backend
-            // which would then verify with 2Captcha API
-            // This is a simplified frontend simulation
-            
-            // Simulate API call delay
+            // Simulate server verification
             setTimeout(function() {
                 document.getElementById('loading').style.display = 'none';
                 
-                // For demo purposes, we'll assume it's always successful
-                // In real implementation, check the 2Captcha API response
-                const isSuccess = true;
+                // In a real implementation, you would verify with your server
+                // which would then use the 2Captcha API
+                const verificationSuccess = true; // Simulated success
                 
-                if (isSuccess) {
+                if (verificationSuccess) {
                     document.getElementById('result').className = 'result success';
                     document.getElementById('result').style.display = 'block';
                     document.getElementById('result').innerHTML = `
@@ -177,10 +189,9 @@
                     document.getElementById('result').style.display = 'block';
                     document.getElementById('result').textContent = 'CAPTCHA verification failed. Please try again.';
                     grecaptcha.reset(captchaWidgetId);
-                    document.getElementById('verifyButton').style.display = 'block';
                 }
-            }, 2000);
-        };
+            }, 1500);
+        }
     </script>
 </body>
 </html>
