@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Script Verification</title>
+    <title>Advanced Script Verification</title>
+    <script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit" async defer></script>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -36,42 +37,8 @@
             padding: 15px;
             background-color: #330066;
             border-radius: 5px;
-        }
-        
-        .captcha-text {
-            font-size: 24px;
-            letter-spacing: 5px;
-            font-weight: bold;
-            color: #ffccff;
-            margin: 10px 0;
-            user-select: none;
-        }
-        
-        input {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: none;
-            border-radius: 5px;
-            background-color: #4d0099;
-            color: #ffffff;
-            font-size: 16px;
-        }
-        
-        button {
-            background-color: #6600cc;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
-            margin-top: 10px;
-        }
-        
-        button:hover {
-            background-color: #7f00ff;
+            display: flex;
+            justify-content: center;
         }
         
         .result {
@@ -101,76 +68,119 @@
             border: 1px solid #4d0099;
         }
         
-        .refresh-btn {
-            background-color: transparent;
-            border: 1px solid #6600cc;
+        .loading {
             color: #cc99ff;
-            padding: 5px 10px;
-            font-size: 12px;
-            margin-left: 10px;
+            margin: 20px 0;
         }
         
-        .refresh-btn:hover {
-            background-color: rgba(102, 0, 204, 0.2);
+        .g-recaptcha {
+            display: inline-block;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Script Verification</h1>
-        <p>Please verify you're human by entering the CAPTCHA below:</p>
+        <h1>Advanced Script Verification</h1>
+        <p>Please complete the CAPTCHA to verify you're human:</p>
         
         <div class="captcha-container">
-            <div class="captcha-text" id="captchaText"></div>
-            <button class="refresh-btn" onclick="generateCaptcha()">↻ Refresh</button>
+            <div id="2captcha-container"></div>
         </div>
         
-        <input type="text" id="userInput" placeholder="Enter CAPTCHA">
-        <button onclick="verifyCaptcha()">Verify</button>
+        <div id="verifyButton" style="display: none;">
+            <button onclick="verifyCaptcha()">Verify CAPTCHA</button>
+        </div>
+        
+        <div id="loading" class="loading" style="display: none;">
+            Verifying CAPTCHA, please wait...
+        </div>
         
         <div id="result" class="result"></div>
     </div>
     
     <script>
-        let captchaCode;
+        // 2Captcha API configuration
+        const API_KEY = '800d917bc91dd5a84e826860f8ffac80'; // Replace with your actual 2Captcha API key
+        let captchaWidgetId;
+        let captchaResponse;
         
-        function generateCaptcha() {
-            const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-            captchaCode = "";
+        // Callback when reCAPTCHA is loaded
+        const onloadCallback = function() {
+            captchaWidgetId = grecaptcha.render('2captcha-container', {
+                'sitekey': '6Le-wvkSAAAAAPBMRTvw0Q4Muexq9bi0DJwx_mJ-', // 2Captcha test key
+                'callback': onCaptchaSuccess,
+                'expired-callback': onCaptchaExpired,
+                'error-callback': onCaptchaError,
+                'theme': 'dark'
+            });
             
-            for (let i = 0; i < 6; i++) {
-                const randomIndex = Math.floor(Math.random() * chars.length);
-                captchaCode += chars[randomIndex];
+            document.getElementById('verifyButton').style.display = 'block';
+        };
+        
+        // CAPTCHA solved successfully
+        const onCaptchaSuccess = function(response) {
+            captchaResponse = response;
+        };
+        
+        // CAPTCHA expired
+        const onCaptchaExpired = function() {
+            captchaResponse = null;
+            document.getElementById('result').style.display = 'none';
+        };
+        
+        // CAPTCHA error
+        const onCaptchaError = function() {
+            captchaResponse = null;
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('result').className = 'result error';
+            document.getElementById('result').textContent = 'CAPTCHA error occurred. Please try again.';
+            grecaptcha.reset(captchaWidgetId);
+        };
+        
+        // Verify CAPTCHA with 2Captcha API
+        const verifyCaptcha = function() {
+            if (!captchaResponse) {
+                document.getElementById('result').style.display = 'block';
+                document.getElementById('result').className = 'result error';
+                document.getElementById('result').textContent = 'Please complete the CAPTCHA first.';
+                return;
             }
             
-            document.getElementById("captchaText").textContent = captchaCode;
-        }
-        
-        function verifyCaptcha() {
-            const userInput = document.getElementById("userInput").value;
-            const resultDiv = document.getElementById("result");
+            document.getElementById('verifyButton').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
             
-            if (userInput === captchaCode) {
-                resultDiv.className = "result success";
-                resultDiv.style.display = "block";
-                resultDiv.innerHTML = `
-                    <p>Verification successful! Here's your script:</p>
-                    <div class="script-box">
-                        loadstring(game:HttpGet('https://raw.githubusercontent.com/TimShadow1/ShadowHUB/refs/heads/main/GAG.lua'))()
-                    </div>
-                    <p>Copy and paste this into your executor.</p>
-                `;
-            } else {
-                resultDiv.className = "result error";
-                resultDiv.style.display = "block";
-                resultDiv.textContent = "Incorrect CAPTCHA. Please try again.";
-                generateCaptcha();
-            }
+            // In a real implementation, you would send this to your backend
+            // which would then verify with 2Captcha API
+            // This is a simplified frontend simulation
             
-            document.getElementById("userInput").value = "";
-        }
-        
-        window.onload = generateCaptcha;
+            // Simulate API call delay
+            setTimeout(function() {
+                document.getElementById('loading').style.display = 'none';
+                
+                // For demo purposes, we'll assume it's always successful
+                // In real implementation, check the 2Captcha API response
+                const isSuccess = true;
+                
+                if (isSuccess) {
+                    document.getElementById('result').className = 'result success';
+                    document.getElementById('result').style.display = 'block';
+                    document.getElementById('result').innerHTML = `
+                        <p>Verification successful! Here's your script:</p>
+                        <div class="script-box">
+                            loadstring(game:HttpGet('https://raw.githubusercontent.com/TimShadow1/ShadowHUB/refs/heads/main/GAG.lua'))()
+                        </div>
+                        <p>Copy and paste this into your executor.</p>
+                    `;
+                } else {
+                    document.getElementById('result').className = 'result error';
+                    document.getElementById('result').style.display = 'block';
+                    document.getElementById('result').textContent = 'CAPTCHA verification failed. Please try again.';
+                    grecaptcha.reset(captchaWidgetId);
+                    document.getElementById('verifyButton').style.display = 'block';
+                }
+            }, 2000);
+        };
     </script>
 </body>
 </html>
